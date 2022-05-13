@@ -1,9 +1,12 @@
 package com.example.caller991.adapters;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,10 +14,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.caller991.ContactsActivity;
 import com.example.caller991.R;
+import com.example.caller991.SMSActivity;
+
+import org.w3c.dom.Text;
 
 public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.ContactHolder> {
     private Context context;
@@ -41,9 +51,11 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.Contac
 
     private Cursor getContactData(String contactId, String... keys) {
         Cursor cursor = context.getContentResolver().query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+//                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                ContactsContract.Data.CONTENT_URI,
                 keys,
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?",
+//                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?",
+                ContactsContract.Data.CONTACT_ID + "=?",
                 new String[]{contactId},
                 null
         );
@@ -92,6 +104,43 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.Contac
     public ContactHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.contact_item, parent, false);
         return new ContactHolder(view);
+    }
+
+    private void dial(View view) {
+        TextView textView = (TextView) view;
+        if (textView.getText() == null || textView.getText().length() == 0)
+            return;
+        try {
+
+            ((ContactsActivity) context).callPermission.launch(Manifest.permission.CALL_PHONE);
+            Intent intent = new Intent(Intent.ACTION_DIAL);
+            intent.setData(Uri.parse("tel:" + textView.getText()));
+            context.startActivity(intent);
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    private void call(View view) {
+        TextView textView = (TextView) view;
+        if (textView.getText() == null || textView.getText().length() == 0)
+            return;
+        try {
+
+            ((ContactsActivity) context).callPermission.launch(Manifest.permission.CALL_PHONE);
+            Intent intent = new Intent(Intent.ACTION_CALL);
+            intent.setData(Uri.parse("tel:" + textView.getText()));
+            context.startActivity(intent);
+        } catch (Exception e) {
+            Log.e("FF", e.toString());
+        }
+    }
+
+    private void SMS(View view){
+        TextView textView = (TextView) view;
+        if(textView.getText() == null || textView.getText().length() == 0) return;
+        Intent intent = new Intent(context, SMSActivity.class);
+        intent.putExtra(SMSActivity.PHONE_KEY, textView.getText().toString());
     }
 
     @SuppressLint("Range")
@@ -159,6 +208,14 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.Contac
                 }
             }
         }
+        holder.phoneField.setOnLongClickListener(view -> {
+            SMS(view);
+            return true;
+        });
+        holder.phoneField2.setOnLongClickListener(view -> {
+            SMS(view);
+            return true;
+        });
     }
 
     @Override
